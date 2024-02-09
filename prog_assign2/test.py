@@ -73,7 +73,7 @@ if __name__ == "__main__":
     env = OneStateMDP()
     env_with_model = OneStateMDPWithModel()
 
-    # Test Value Iteration
+    # Test Value Iteration (dp.py)
     V_star, pi_star = value_iteration(env_with_model,np.zeros(env_with_model.spec.nS),1e-4)
 
     assert np.allclose(V_star,np.array([1.,0.]),1e-5,1e-2), V_star
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     eval_policy = pi_star
     behavior_policy = RandomPolicy(env.spec.nA)
 
-    # Test Value Prediction
+    # Test Value Prediction (dp.py)
     V, Q = value_prediction(env_with_model,eval_policy,np.zeros(env.spec.nS),1e-4)
     assert np.allclose(V,np.array([1.,0.]),1e-5,1e-2), V
     assert np.allclose(Q,np.array([[1.,0.],[0.,0.]]),1e-5,1e-2), Q
@@ -109,8 +109,9 @@ if __name__ == "__main__":
 
         traj = list(zip(states[:-1],actions,rewards,states[1:]))
         trajs.append(traj)
-
-    # On-poilicy evaluation test
+    
+    #### Monte Carlo methods testing
+    # On-poilicy evaluation test 
     Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
     Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
     V_est_td = ntd(env.spec,trajs,1,0.005,np.zeros((env.spec.nS)))
