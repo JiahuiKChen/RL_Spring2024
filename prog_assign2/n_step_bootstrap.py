@@ -4,6 +4,34 @@ import numpy as np
 from env import EnvSpec
 from policy import Policy
 
+class QPolicy(Policy):
+    def __init__(self):
+        #####################
+        # TODO: Implement the methods in this class.
+        # You may add any arguments to the constructor as you see fit.
+        # "QPolicy" here refers to a policy that takes 
+        #    greedy actions w.r.t. Q values
+        #####################
+        raise NotImplementedError()
+    
+    def action_prob(self,state:int,action:int) -> float:
+        """
+        input:
+            state, action
+        return:
+            \pi(a|s)
+        """
+        raise NotImplementedError()
+
+    def action(self,state:int) -> int:
+        """
+        input:
+            state
+        return:
+            action
+        """
+        raise NotImplementedError()
+
 def on_policy_n_step_td(
     env_spec:EnvSpec,
     trajs:Iterable[Iterable[Tuple[int,int,int,int]]],

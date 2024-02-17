@@ -51,7 +51,7 @@ class EnvWithModel(Env):
         """
         Transition Dynamics
         return: a numpy array shape of [nS,nA,nS]
-            TD[s,a,s'] := the probability it will resulted in s' when it execute action a given state s
+            TD[s,a,s'] := the probability it will resulted in s' when it executes action a given state s
         """
         raise NotImplementedError()
 
@@ -60,7 +60,7 @@ class EnvWithModel(Env):
         """
         Reward function
         return: a numpy array shape of [nS,nA,nS]
-            R[s,a,s'] := reward the agent will get it experiences (s,a,s') transition.
+            R[s,a,s'] := reward the agent will get if it experiences (s,a,s') transition.
         """
         raise NotImplementedError()
 

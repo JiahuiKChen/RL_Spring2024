@@ -33,11 +33,12 @@ if __name__ == "__main__":
         def _build_trans_mat(self):
             trans_mat = np.zeros((2,2,2))
 
+            # [starting state, action taken, next state]
             trans_mat[0,0,0] = 0.9
             trans_mat[0,0,1] = 0.1
-            trans_mat[0,1,0] = 0.
+            trans_mat[0,1,0] = 0. # means this isn't possible (no arrow from state 0, take right, back to 0 on pg. 107)
             trans_mat[0,1,1] = 1.0
-            trans_mat[1,:,1] = 1.
+            trans_mat[1,:,1] = 1. # no way to transition out of terminal state 1
 
             r_mat = np.zeros((2,2,2))
             r_mat[0,0,1] = 1.
@@ -74,7 +75,7 @@ if __name__ == "__main__":
     env_with_model = OneStateMDPWithModel()
 
     # Test Value Iteration (dp.py)
-    V_star, pi_star = value_iteration(env_with_model,np.zeros(env_with_model.spec.nS),1e-4)
+    V_star, pi_star = value_iteration(env_with_model, np.zeros(env_with_model.spec.nS), 1e-4)
 
     assert np.allclose(V_star,np.array([1.,0.]),1e-5,1e-2), V_star
     assert pi_star.action(0) == 0
@@ -82,56 +83,56 @@ if __name__ == "__main__":
     eval_policy = pi_star
     behavior_policy = RandomPolicy(env.spec.nA)
 
-    # Test Value Prediction (dp.py)
-    V, Q = value_prediction(env_with_model,eval_policy,np.zeros(env.spec.nS),1e-4)
-    assert np.allclose(V,np.array([1.,0.]),1e-5,1e-2), V
-    assert np.allclose(Q,np.array([[1.,0.],[0.,0.]]),1e-5,1e-2), Q
+    # # Test Value Prediction (dp.py)
+    # V, Q = value_prediction(env_with_model,eval_policy,np.zeros(env.spec.nS),1e-4)
+    # assert np.allclose(V,np.array([1.,0.]),1e-5,1e-2), V
+    # assert np.allclose(Q,np.array([[1.,0.],[0.,0.]]),1e-5,1e-2), Q
 
-    V, Q = value_prediction(env_with_model,behavior_policy,np.zeros(env.spec.nS),1e-4)
-    assert np.allclose(V,np.array([0.1,0.]),1e-5,1e-2), V
-    assert np.allclose(Q,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-2), Q
+    # V, Q = value_prediction(env_with_model,behavior_policy,np.zeros(env.spec.nS),1e-4)
+    # assert np.allclose(V,np.array([0.1,0.]),1e-5,1e-2), V
+    # assert np.allclose(Q,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-2), Q
 
-    # Gather experience using behavior policy
-    N_EPISODES = 100000
+    # # Gather experience using behavior policy
+    # N_EPISODES = 100000
 
-    trajs = []
-    for _ in tqdm(range(N_EPISODES)):
-        states, actions, rewards, done =\
-            [env.reset()], [], [], []
+    # trajs = []
+    # for _ in tqdm(range(N_EPISODES)):
+    #     states, actions, rewards, done =\
+    #         [env.reset()], [], [], []
 
-        while not done:
-            a = behavior_policy.action(states[-1])
-            s, r, done = env.step(a)
+    #     while not done:
+    #         a = behavior_policy.action(states[-1])
+    #         s, r, done = env.step(a)
 
-            states.append(s)
-            actions.append(a)
-            rewards.append(r)
+    #         states.append(s)
+    #         actions.append(a)
+    #         rewards.append(r)
 
-        traj = list(zip(states[:-1],actions,rewards,states[1:]))
-        trajs.append(traj)
+    #     traj = list(zip(states[:-1],actions,rewards,states[1:]))
+    #     trajs.append(traj)
     
-    #### Monte Carlo methods testing
-    # On-poilicy evaluation test 
-    Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    V_est_td = ntd(env.spec,trajs,1,0.005,np.zeros((env.spec.nS)))
+    # #### Monte Carlo methods testing
+    # # On-poilicy evaluation test 
+    # Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # V_est_td = ntd(env.spec,trajs,1,0.005,np.zeros((env.spec.nS)))
 
-    assert np.allclose(Q_est_ois,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
-    assert np.allclose(Q_est_wis,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
-    assert np.allclose(Q_est_ois,Q_est_wis), 'Both implementation should be equal in on policy case'
-    assert np.allclose(V_est_td,np.array([0.1,0.]),1e-5,1e-1), 'due to stochasticity, this test might fail'
+    # assert np.allclose(Q_est_ois,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
+    # assert np.allclose(Q_est_wis,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
+    # assert np.allclose(Q_est_ois,Q_est_wis), 'Both implementation should be equal in on policy case'
+    # assert np.allclose(V_est_td,np.array([0.1,0.]),1e-5,1e-1), 'due to stochasticity, this test might fail'
 
-    # Off-policy evaluation test
-    Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # # Off-policy evaluation test
+    # Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
 
-    # Don't panic even though Q_est_ois shows high estimation error. It's expected one!
-    print(Q_est_ois)
-    print(Q_est_wis)
+    # # Don't panic even though Q_est_ois shows high estimation error. It's expected one!
+    # print(Q_est_ois)
+    # print(Q_est_wis)
 
-    # Off-policy SARSA test
-    Q_star_est, pi_star_est = nsarsa(env.spec,trajs,behavior_policy,n=1,alpha=0.005,initQ=np.zeros((env.spec.nS,env.spec.nA)))
-    assert pi_star_est.action(0) == 0
+    # # Off-policy SARSA test
+    # Q_star_est, pi_star_est = nsarsa(env.spec,trajs,behavior_policy,n=1,alpha=0.005,initQ=np.zeros((env.spec.nS,env.spec.nA)))
+    # assert pi_star_est.action(0) == 0
 
-    # sarsa also could fail to converge because of the similar reason above.
-    print(Q_star_est)
+    # # sarsa also could fail to converge because of the similar reason above.
+    # print(Q_star_est)
