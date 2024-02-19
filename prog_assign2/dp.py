@@ -51,7 +51,7 @@ def get_maximal_action(env, state, values):
     # indexing with current value as first dim yeilds array of dimensions: [possible actions, corresponding next states]
     for action in range(trans_dynamics[state].shape[0]):
         next_states = trans_dynamics[state][action] 
-        # calculate sum of p(s', r | s,a)[r + discount * V(s')] over all possible next states s' given the action a
+        # calculate sum of p(s',r | s,a)[r + discount * V(s')] over all possible next states s' given the action a
         expected_val = 0
         for next_state in range(len(next_states)):
             trans_prob = trans_dynamics[state, action, next_state]
@@ -118,7 +118,8 @@ def value_prediction(env:EnvWithModel, pi:Policy, initV:np.array, theta:float) -
         actions = Q[state]
         for action in range(len(actions)):
             next_states = trans_probs[state][action]
-            # calculate expected value of the action state pair (transition dynamic * (reward + discounted value function))
+            # calculate expected value of the action state pair:
+            # sum of (transition dynamic * (reward + discounted value function)) over all possible next states
             # value function is from policy, so Q function corresponds to this policy
             expected_val = 0
             for next_state in range(len(next_states)):

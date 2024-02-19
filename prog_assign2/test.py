@@ -92,39 +92,41 @@ if __name__ == "__main__":
     assert np.allclose(V,np.array([0.1,0.]),1e-5,1e-2), V
     assert np.allclose(Q,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-2), Q
 
-    # # Gather experience using behavior policy
-    # N_EPISODES = 100000
+    # Gather experience using behavior policy
+    N_EPISODES = 100000
 
-    # trajs = []
-    # for _ in tqdm(range(N_EPISODES)):
-    #     states, actions, rewards, done =\
-    #         [env.reset()], [], [], []
+    trajs = []
+    for _ in tqdm(range(N_EPISODES)):
+        states, actions, rewards, done =\
+            [env.reset()], [], [], []
 
-    #     while not done:
-    #         a = behavior_policy.action(states[-1])
-    #         s, r, done = env.step(a)
+        while not done:
+            a = behavior_policy.action(states[-1])
+            s, r, done = env.step(a)
 
-    #         states.append(s)
-    #         actions.append(a)
-    #         rewards.append(r)
+            states.append(s)
+            actions.append(a)
+            rewards.append(r)
 
-    #     traj = list(zip(states[:-1],actions,rewards,states[1:]))
-    #     trajs.append(traj)
+        traj = list(zip(states[:-1],actions,rewards,states[1:]))
+        trajs.append(traj)
     
-    # #### Monte Carlo methods testing
-    # # On-poilicy evaluation test 
+    ##### On-poilicy evaluation test 
+    # Monte Carlo 
     # Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    # Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # N Step TD 
     # V_est_td = ntd(env.spec,trajs,1,0.005,np.zeros((env.spec.nS)))
 
+    #### Sussy (stochastic) tests
     # assert np.allclose(Q_est_ois,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
     # assert np.allclose(Q_est_wis,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
     # assert np.allclose(Q_est_ois,Q_est_wis), 'Both implementation should be equal in on policy case'
     # assert np.allclose(V_est_td,np.array([0.1,0.]),1e-5,1e-1), 'due to stochasticity, this test might fail'
 
-    # # Off-policy evaluation test
+    # ##### Off-policy evaluation test
     # Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    # Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
 
     # # Don't panic even though Q_est_ois shows high estimation error. It's expected one!
     # print(Q_est_ois)
