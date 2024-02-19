@@ -84,13 +84,13 @@ if __name__ == "__main__":
     behavior_policy = RandomPolicy(env.spec.nA)
 
     # # Test Value Prediction (dp.py)
-    # V, Q = value_prediction(env_with_model,eval_policy,np.zeros(env.spec.nS),1e-4)
-    # assert np.allclose(V,np.array([1.,0.]),1e-5,1e-2), V
-    # assert np.allclose(Q,np.array([[1.,0.],[0.,0.]]),1e-5,1e-2), Q
+    V, Q = value_prediction(env_with_model,eval_policy,np.zeros(env.spec.nS),1e-4)
+    assert np.allclose(V,np.array([1.,0.]),1e-5,1e-2), V
+    assert np.allclose(Q,np.array([[1.,0.],[0.,0.]]),1e-5,1e-2), Q
 
-    # V, Q = value_prediction(env_with_model,behavior_policy,np.zeros(env.spec.nS),1e-4)
-    # assert np.allclose(V,np.array([0.1,0.]),1e-5,1e-2), V
-    # assert np.allclose(Q,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-2), Q
+    V, Q = value_prediction(env_with_model,behavior_policy,np.zeros(env.spec.nS),1e-4)
+    assert np.allclose(V,np.array([0.1,0.]),1e-5,1e-2), V
+    assert np.allclose(Q,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-2), Q
 
     # # Gather experience using behavior policy
     # N_EPISODES = 100000
