@@ -22,13 +22,32 @@ def off_policy_mc_prediction_ordinary_importance_sampling(
     ret:
         Q: $q_pi$ function; numpy array shape of [nS,nA]
     """
+    q = initQ
+    # C in book pg 110 algorithm
+    discount = env_spec.gamma
+    # number of times each state-action pair has been visited (total steps so across episodes) 
+    visits = np.zeros(q.shape)
+    
+    # each episode trajectory is a list of tuples: (state, action, reward, next state) 
+    for episode_traj in trajs:
+        goal = 0
+        importance_ratio = 1
+        # go through each step in the epiosde backwards, as we need the goal
+        for step in reversed(range(len(episode_traj))):
+            tup = episode_traj[step]
+            state = tup[0]
+            action = tup[1]
+            reward = tup[2]
+            
+            visits[state, action] += 1
+            goal = (discount * goal) + reward
+            q[state, action] = q[state, action] + ((importance_ratio / visits[state, action]) * (goal - q[state, action]))
+            importance_ratio = importance_ratio * (pi.action_prob(state=state, action=action) / bpi.action_prob(state=state, action=action))
+            # if weight (aka importance sampling ratio) is ever 0, it will always be 0 and q won't change
+            if importance_ratio == 0:
+                continue
 
-    #####################
-    # TODO: Implement Off Policy Monte-Carlo prediction algorithm using ordinary importance
-    # sampling (Hint: Sutton Book p. 109, every-visit implementation is fine)
-    #####################
-
-    return Q
+    return q
 
 def off_policy_mc_prediction_weighted_importance_sampling(
     env_spec:EnvSpec,
@@ -59,16 +78,18 @@ def off_policy_mc_prediction_weighted_importance_sampling(
         goal = 0
         weight = 1
         # go through each step in the epiosde backwards, as we need the goal
-        for step in range(len(episode_traj)-1, -1):
+        for step in reversed(range(len(episode_traj))):
             tup = episode_traj[step]
             state = tup[0]
             action = tup[1]
             reward = tup[2]
-            next_state = tup[3]
 
             goal = (discount * goal) + reward
             weight_sum[state, action] = weight_sum[state, action] + weight
             q[state, action] = q[state, action] + ((weight / weight_sum[state, action]) * (goal - q[state, action]))
             weight = weight * (pi.action_prob(state=state, action=action) / bpi.action_prob(state=state, action=action))
+            # if weight (aka importance sampling ratio) is ever 0, it will always be 0 and q won't change
+            if weight == 0:
+                continue
 
     return q
