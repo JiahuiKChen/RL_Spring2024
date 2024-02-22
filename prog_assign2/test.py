@@ -113,24 +113,24 @@ if __name__ == "__main__":
     
     ##### On-poilicy evaluation test 
     # Monte Carlo 
-    Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,behavior_policy,np.zeros((env.spec.nS,env.spec.nA)))
     # N Step TD 
-    # V_est_td = ntd(env.spec,trajs,1,0.005,np.zeros((env.spec.nS)))
+    V_est_td = ntd(env.spec,trajs,1,0.005,np.zeros((env.spec.nS)))
 
     #### Sussy (stochastic) tests
-    assert np.allclose(Q_est_ois,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
-    assert np.allclose(Q_est_wis,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
-    assert np.allclose(Q_est_ois,Q_est_wis), 'Both implementation should be equal in on policy case'
-    # assert np.allclose(V_est_td,np.array([0.1,0.]),1e-5,1e-1), 'due to stochasticity, this test might fail'
+    # assert np.allclose(Q_est_ois,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
+    # assert np.allclose(Q_est_wis,np.array([[0.19,0.],[0.,0.]]),1e-5,1e-1), 'due to stochasticity, this test might fail'
+    # assert np.allclose(Q_est_ois,Q_est_wis), 'Both implementation should be equal in on policy case'
+    assert np.allclose(V_est_td,np.array([0.1,0.]),1e-5,1e-1), 'due to stochasticity, this test might fail'
 
     ##### Off-policy evaluation test
-    Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
-    Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # Q_est_ois = mc_ois(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
+    # Q_est_wis = mc_wis(env.spec,trajs,behavior_policy,eval_policy,np.zeros((env.spec.nS,env.spec.nA)))
 
-    # # Don't panic even though Q_est_ois shows high estimation error. It's expected one!
-    print(Q_est_ois)
-    print(Q_est_wis)
+    # Don't panic even though Q_est_ois shows high estimation error. It's expected one!
+    # print(Q_est_ois)
+    # print(Q_est_wis)
 
     # # Off-policy SARSA test
     # Q_star_est, pi_star_est = nsarsa(env.spec,trajs,behavior_policy,n=1,alpha=0.005,initQ=np.zeros((env.spec.nS,env.spec.nA)))

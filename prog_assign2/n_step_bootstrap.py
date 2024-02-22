@@ -5,7 +5,7 @@ from env import EnvSpec
 from policy import Policy
 
 class QPolicy(Policy):
-    def __init__(self):
+    def __init__(self, q:np.array):
         #####################
         # TODO: Implement the methods in this class.
         # You may add any arguments to the constructor as you see fit.
@@ -50,13 +50,44 @@ def on_policy_n_step_td(
     ret:
         V: $v_pi$ function; numpy array shape of [nS]
     """
+    values = initV
+    discount = env_spec.gamma
 
-    #####################
-    # TODO: Implement On Policy n-Step TD algorithm
-    # sampling (Hint: Sutton Book p. 144)
-    #####################
+    # each episode trajectory is a list of tuples: (state, action, reward, next state) 
+    for episode_traj in trajs:
+        terminal = float('inf')
+        rewards = np.zeros(len(episode_traj))
+        update_state = 0
+        step = 0
 
-    return V
+        while True:
+            if step < terminal:
+                # store reward at each step so we can use it to calculate goal when n steps ahead
+                rewards[step % (n+1)] = episode_traj[step][2]
+
+                # if next state is terminal, then we're at the end of the trajectory
+                if step == (len(episode_traj) -1): 
+                    terminal = step + 1
+
+            update_state = step - n + 1
+
+            # if we've already seen n steps, we can start updating values
+            if update_state >= 0:
+                goal = 0
+                for i in range(update_state + 1, min(update_state + n, terminal)):
+                    goal += (discount**(i - update_state - 1)) * rewards[i % (n+1)] 
+                
+                if (update_state + n) < terminal:
+                    goal += (discount**n) * values[(update_state + n) % (n + 1)]
+
+                values[update_state % (n+1)] = values[update_state % (n+1)] + (alpha * (goal - values[update_state % (n+1)]))
+            
+            if update_state == terminal - 1:
+                break
+            else:
+                step += 1
+
+    return values
 
 def off_policy_n_step_sarsa(
     env_spec:EnvSpec,
