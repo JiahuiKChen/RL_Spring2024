@@ -132,9 +132,9 @@ if __name__ == "__main__":
     # print(Q_est_ois)
     # print(Q_est_wis)
 
-    # # Off-policy SARSA test
-    # Q_star_est, pi_star_est = nsarsa(env.spec,trajs,behavior_policy,n=1,alpha=0.005,initQ=np.zeros((env.spec.nS,env.spec.nA)))
-    # assert pi_star_est.action(0) == 0
+    # Off-policy SARSA test
+    Q_star_est, pi_star_est = nsarsa(env.spec,trajs,behavior_policy,n=1,alpha=0.005,initQ=np.zeros((env.spec.nS,env.spec.nA)))
+    assert pi_star_est.action(0) == 0
 
-    # # sarsa also could fail to converge because of the similar reason above.
-    # print(Q_star_est)
+    # sarsa also could fail to converge because of the similar reason above.
+    print(Q_star_est)

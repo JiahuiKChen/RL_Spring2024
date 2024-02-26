@@ -6,13 +6,7 @@ from policy import Policy
 
 class QPolicy(Policy):
     def __init__(self, q:np.array):
-        #####################
-        # TODO: Implement the methods in this class.
-        # You may add any arguments to the constructor as you see fit.
-        # "QPolicy" here refers to a policy that takes 
-        #    greedy actions w.r.t. Q values
-        #####################
-        raise NotImplementedError()
+        self.q = q
     
     def action_prob(self,state:int,action:int) -> float:
         """
@@ -21,7 +15,12 @@ class QPolicy(Policy):
         return:
             \pi(a|s)
         """
-        raise NotImplementedError()
+        possible_actions = self.q[state]
+        greedy_action = np.argmax(possible_actions)
+        if action == greedy_action:
+            return 1.0
+        else:
+            return 0.0
 
     def action(self,state:int) -> int:
         """
@@ -30,7 +29,13 @@ class QPolicy(Policy):
         return:
             action
         """
-        raise NotImplementedError()
+        possible_actions = self.q[state]
+        action = np.argmax(possible_actions)
+        return action
+
+    def update_q(self, q:np.array):
+        self.q = q
+
 
 def on_policy_n_step_td(
     env_spec:EnvSpec,
@@ -56,38 +61,46 @@ def on_policy_n_step_td(
     # each episode trajectory is a list of tuples: (state, action, reward, next state) 
     for episode_traj in trajs:
         terminal = float('inf')
-        rewards = np.zeros(len(episode_traj))
-        update_state = 0
+        # tracks reward received at each time step (needed since we look backwards to calculate goal)
+        rewards = [0] 
+        # tracks state at each time step (needed since we look backwards to update states) 
+        states = []
+        states.append(episode_traj[0][0])
         step = 0
 
         while True:
             if step < terminal:
-                # store reward at each step so we can use it to calculate goal when n steps ahead
-                rewards[step % (n+1)] = episode_traj[step][2]
+                # store reward and state at each step 
+                rewards.append(episode_traj[step][2])
+                states.append(episode_traj[step][3])
 
                 # if next state is terminal, then we're at the end of the trajectory
                 if step == (len(episode_traj) -1): 
                     terminal = step + 1
 
-            update_state = step - n + 1
+            update_time = step - n + 1
 
             # if we've already seen n steps, we can start updating values
-            if update_state >= 0:
-                goal = 0
-                for i in range(update_state + 1, min(update_state + n, terminal)):
-                    goal += (discount**(i - update_state - 1)) * rewards[i % (n+1)] 
-                
-                if (update_state + n) < terminal:
-                    goal += (discount**n) * values[(update_state + n) % (n + 1)]
+            if update_time >= 0:
+                update_state = int(states[update_time])
 
-                values[update_state % (n+1)] = values[update_state % (n+1)] + (alpha * (goal - values[update_state % (n+1)]))
+                goal = 0
+                for i in range(update_time + 1, min(update_time + n, terminal) + 1):
+                    goal += (discount**(i - update_time - 1)) * rewards[i] 
+                
+                if (update_time + n) < terminal:
+                    last_state = states[update_time + n]
+                    goal += (discount**n) * values[last_state]
+
+                values[update_state] = values[update_state] + (alpha * (goal - values[update_state]))
             
-            if update_state == terminal - 1:
+            if update_time == terminal - 1:
                 break
             else:
                 step += 1
 
     return values
+
 
 def off_policy_n_step_sarsa(
     env_spec:EnvSpec,
@@ -110,10 +123,65 @@ def off_policy_n_step_sarsa(
         Q: $q_star$ function; numpy array shape of [nS,nA]
         policy: $pi_star$; instance of policy class
     """
+    q = initQ
+    discount = env_spec.gamma
+    pi = QPolicy(q=q)
 
-    #####################
-    # TODO: Implement Off Policy n-Step SARSA algorithm
-    # sampling (Hint: Sutton Book p. 149)
-    #####################
+    # each episode trajectory is a list of tuples: (state, action, reward, next state) 
+    for episode_traj in trajs:
+        terminal = float('inf')
+        # tracks reward received at each time step (needed since we look backwards to calculate goal)
+        rewards = [0] 
+        # tracks state at each time step (needed since we look backwards to update states) 
+        states = []
+        actions = []
+        states.append(episode_traj[0][0])
+        actions.append(episode_traj[0][1])
+        step = 0
 
-    return Q, pi
+        while True:
+            if step < terminal:
+                # store reward and state at each step 
+                rewards.append(episode_traj[step][2])
+                states.append(episode_traj[step][3])
+
+                # if next state is terminal, then we're at the end of the trajectory
+                if step == (len(episode_traj) -1): 
+                    terminal = step + 1
+                else:
+                    actions.append(episode_traj[step+1][1])
+
+            update_time = step - n + 1
+
+            # if we've already seen n steps, we can start updating values
+            if update_time >= 0:
+                goal = 0
+                for i in range(update_time + 1, min(update_time + n, terminal) + 1):
+                    goal += (discount**(i - update_time - 1)) * rewards[i] 
+
+                rho = 1
+                for i in range(update_time + 1, min(update_time + n, terminal-1) + 1):
+                    action_i = actions[i]
+                    state_i = states[i]
+                    rho = rho * (pi.action_prob(state=state_i, action=action_i)
+                                 /
+                                 bpi.action_prob(state=state_i, action=action_i)) 
+
+                if (update_time + n) < terminal:
+                    last_state = states[update_time + n]
+                    last_action = actions[update_time + n]
+                    goal += (discount**n) * q[last_state, last_action]
+
+                update_state = states[update_time]
+                update_action = actions[update_time]
+                q[update_state, update_action] = q[update_state, update_action] + \
+                    (alpha * rho * (goal - q[update_state, update_action]))
+                # once Q is updated, update policy
+                pi.update_q(q=q)
+            
+            if update_time == terminal - 1:
+                break
+            else:
+                step += 1
+
+    return q, pi
