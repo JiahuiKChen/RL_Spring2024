@@ -46,9 +46,51 @@ def semi_gradient_n_step_td(
         n: n-step
         alpha: learning rate
         V: value function
-        num_episode: #episodes to iterate
+        num_episode: episodes to iterate
     output:
         None
     """
-    #TODO: implement this function
+    discount = gamma
 
+    for episode in range(num_episode):
+        init_state, _ = env.reset()
+        # tracks state at each time step (needed since we look backwards to update states) 
+        states = [init_state]
+        # tracks reward received at each time step (needed since we look backwards to calculate goal)
+        rewards = [0] 
+        terminal = float('inf')
+        step = 0
+
+        while True:
+            if step < terminal:
+                # get action from policy, given current state
+                action = pi.action(state=states[step]) 
+                next_state, reward, terminated, _, _ = env.step(action)
+                # store reward and state at each step 
+                states.append(next_state)
+                rewards.append(reward)
+
+                # if next state is terminal, then we're at the end of the trajectory
+                if terminated: 
+                    terminal = step + 1
+
+            update_time = step - n + 1
+
+            # if we've already seen n steps, we can start updating values
+            if update_time >= 0:
+                update_state = int(states[update_time])
+
+                goal = 0
+                for i in range(update_time + 1, min(update_time + n, terminal) + 1):
+                    goal += (discount**(i - update_time - 1)) * rewards[i] 
+                
+                if (update_time + n) < terminal:
+                    last_state = states[update_time + n]
+                    goal += (discount**n) * V(last_state)
+
+                V.update(alpha=alpha, G=goal, s_tau=update_state)
+            
+            if update_time == terminal - 1:
+                break
+            else:
+                step += 1
