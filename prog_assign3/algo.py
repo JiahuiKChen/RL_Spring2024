@@ -16,7 +16,7 @@ class ValueFunctionWithApproximation(object):
     def update(self,alpha,G,s_tau):
         """
         Implement the update rule;
-        w <- w + \alpha[G- \hat{v}(s_tau;w)] \nabla\hat{v}(s_tau;w)
+        w <- w + alpha[G- \hat{v}(s_tau;w)] nabla\hat{v}(s_tau;w)
 
         input:
             alpha: learning rate

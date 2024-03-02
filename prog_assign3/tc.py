@@ -13,12 +13,17 @@ class ValueFunctionWithTile(ValueFunctionWithApproximation):
         num_tilings: # tilings
         tile_width: tile width for each dimension
         """
+        self.w = np.zeros(num_tilings)
+        self.values
         # TODO: implement this method
 
     def __call__(self,s):
         # TODO: implement this method
+        # this is v(s, w)
+        # inner product of feature vector (tiles) for state s and w 
         return 0.
 
+    # update for linear function approx. on page 205
     def update(self,alpha,G,s_tau):
-        # TODO: implement this method
-        return None
+        self.w = self.w + alpha * (( G - self.__call__(s=s_tau) ) * self.values[s_tau])
+        return self.w
