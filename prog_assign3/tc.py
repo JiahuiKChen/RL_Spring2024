@@ -13,17 +13,39 @@ class ValueFunctionWithTile(ValueFunctionWithApproximation):
         num_tilings: # tilings
         tile_width: tile width for each dimension
         """
-        self.w = np.zeros(num_tilings)
-        self.values
-        # TODO: implement this method
+        self.state_high = state_high
+        self.tile_width = tile_width
+        self.state_low = state_low
+        # number of tiles per dim, as each tiling covers space entirely
+        self.tiles_per_dim = np.ceil((self.state_high - self.state_low) / self.tile_width).astype(int) + 1
+        self.w = np.zeros((num_tilings, np.prod(self.tiles_per_dim)))
+        self.num_tilings = num_tilings
+       
 
     def __call__(self,s):
-        # TODO: implement this method
-        # this is v(s, w)
-        # inner product of feature vector (tiles) for state s and w 
-        return 0.
+        # inner product of feature vector for state s and w 
+        # since this is a linear method (pg. 205)
+        x = self.get_feature_vec(s=s)
+        value_approx = np.inner(self.w.flatten(), x.flatten()) 
+        return value_approx 
+
+    # construct tile coding feature vector, given the state
+    def get_feature_vec(self, s):
+        feature_vec = np.zeros((self.num_tilings, np.prod(self.tiles_per_dim)))
+
+        # for each tiling, find which tile corresponds to the given state and set it to 1
+        for tiling_ind in range(self.num_tilings):
+            # find the low/starting value of the tiling 
+            # tiling_low = (self.state_low - tiling_ind) / (self.tile_width)
+            # convert the state values into tile indices
+            s_ind = np.ceil((s - self.state_low) / self.tile_width).astype(int) # - 1 
+            tile_ind = np.ravel_multi_index(multi_index=s_ind, dims=self.tiles_per_dim)
+            feature_vec[tiling_ind][tile_ind] = 1
+
+        return feature_vec
 
     # update for linear function approx. on page 205
     def update(self,alpha,G,s_tau):
-        self.w = self.w + alpha * (( G - self.__call__(s=s_tau) ) * self.values[s_tau])
+        # self.w = self.w + alpha * (np.matmul(( G - self.__call__(s=s_tau) ),  self.get_feature_vec(s=s_tau)))
+        self.w = self.w + alpha * (( G - self.__call__(s=s_tau) ) * self.get_feature_vec(s=s_tau))
         return self.w

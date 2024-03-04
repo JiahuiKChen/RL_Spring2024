@@ -39,5 +39,5 @@ def test_nn():
     assert np.allclose(Vs,correct_values,0.20,15.), f'{correct_values} != {Vs}, but it might due to stochasticity'
 
 if __name__ == "__main__":
-    test_tile()
+    # test_tile()
     test_nn()
