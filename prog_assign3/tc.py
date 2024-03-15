@@ -36,9 +36,14 @@ class ValueFunctionWithTile(ValueFunctionWithApproximation):
         # for each tiling, find which tile corresponds to the given state and set it to 1
         for tiling_ind in range(self.num_tilings):
             # find the low/starting value of the tiling 
-            # tiling_low = (self.state_low - tiling_ind) / (self.tile_width)
+            tiling_low = (self.state_low - (tiling_ind / self.num_tilings)) / (self.tiles_per_dim)
             # convert the state values into tile indices
-            s_ind = np.ceil((s - self.state_low) / self.tile_width).astype(int) # - 1 
+            # s_ind = np.ceil( ((s - self.state_low) / self.tiles_per_dim) + tiling_low).astype(int)
+            # s_ind = np.ceil( ((s - self.state_low) / self.tile_width) + tiling_low).astype(int) 
+            s_ind = np.ceil(((s - self.state_low) / (self.tiles_per_dim)) + tiling_low).astype(int) # - 1 
+            for i in range(len(s_ind)):
+                if s_ind[i] < 0:
+                    s_ind[i] = 0
             tile_ind = np.ravel_multi_index(multi_index=s_ind, dims=self.tiles_per_dim)
             feature_vec[tiling_ind][tile_ind] = 1
 
@@ -46,6 +51,5 @@ class ValueFunctionWithTile(ValueFunctionWithApproximation):
 
     # update for linear function approx. on page 205
     def update(self,alpha,G,s_tau):
-        # self.w = self.w + alpha * (np.matmul(( G - self.__call__(s=s_tau) ),  self.get_feature_vec(s=s_tau)))
         self.w = self.w + alpha * (( G - self.__call__(s=s_tau) ) * self.get_feature_vec(s=s_tau))
         return self.w
