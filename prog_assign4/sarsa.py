@@ -20,7 +20,7 @@ class StateActionFeatureVectorWithTile():
         self.num_tilings = num_tilings
         self.num_actions = num_actions
 
-        self.tiles_per_dim = (np.ceil(((self.state_high - self.state_low) / self.tile_width) + 1)).astype(int)
+        self.tiles_per_dim = (np.ceil((self.state_high - self.state_low)/tile_width) + 1).astype(int)
         self.num_tiles = np.prod(self.tiles_per_dim)
         self.tiling_offset = self.tile_width / self.num_tilings
         self.offsets = [self.state_low - i * self.tiling_offset for i in range(self.num_tilings)]
@@ -48,7 +48,7 @@ class StateActionFeatureVectorWithTile():
         for offset_ind in range(len(self.offsets)):
             offset = self.offsets[offset_ind]
             x_action_tiling = x_action_tiles[offset_ind * self.num_tiles : (offset_ind+1) * self.num_tiles]
-            multi_ind = tuple( ((s - offset) // self.tile_width ).astype(int))
+            multi_ind = tuple(((s - offset) // self.tile_width).astype(int))
             flat_ind = np.ravel_multi_index(multi_ind, self.tiles_per_dim)
 
             x_action_tiling[flat_ind] = 1
@@ -80,7 +80,7 @@ def SarsaLambda(
     w = np.zeros((X.feature_vector_len()))
 
     for _ in range(num_episode):
-        init_state, _ = env.reset()
+        init_state = env.reset()
         action = epsilon_greedy_policy(init_state, False, w)
         x = X(init_state, False, action)
 

@@ -57,8 +57,6 @@ class PiApproximationWithNN(nn.Module):
         """
         self.model.train()
         action_prob = self.forward(states, return_prob=True)
-        # state_inds = torch.arange(states.size(0))
-        # selected_probs = action_prob[0, actions_taken]
         policy_loss = torch.mean(-torch.log(action_prob) * delta * gamma_t)
         self.optimizer.zero_grad()
         policy_loss.backward()

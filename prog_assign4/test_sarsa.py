@@ -34,7 +34,7 @@ def test_sarsa_lamda():
         return G
 
     Gs = [_eval() for _ in  range(100)]
-    _eval(True)
+    _eval(False)
 
     assert np.max(Gs) >= -110.0, 'fail to solve mountaincar'
 
