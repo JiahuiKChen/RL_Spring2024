@@ -2,8 +2,6 @@ from typing import Iterable
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import numpy as np
 
 class PiApproximationWithNN(nn.Module):
@@ -15,21 +13,40 @@ class PiApproximationWithNN(nn.Module):
         """
         super(PiApproximationWithNN, self).__init__()
 
-        # TODO: implement the rest here
-        raise NotImplementedError()
-
+        # 2 hidden layers with 32 nodes, ReLU as activations for hidden layers
+        self.model = nn.Sequential(
+            nn.Linear(state_dims, 32),
+            nn.ReLU(),
+            nn.Linear(32, 32),
+            nn.ReLU(),
+            nn.Linear(32, 32),
+            nn.Linear(32, num_actions),
+            # softmax over number of actions is output
+            nn.Softmax(dim=-1)
+        ) 
+        self.optimizer = torch.optim.Adam(self.model.parameters(), betas=(0.9, 0.999), lr=alpha)
 
     def forward(self, states, return_prob=False):
-        # TODO: implement this method
-
         # Note: You will want to return either probabilities or an action
         # Depending on the return_prob parameter
         # This is to make this function compatible with both the
         # update function below (which needs probabilities)
         # and because in test cases we will call pi(state) and 
         # expect an action as output.
+        # self.model.eval()
 
-        raise NotImplementedError()
+        if isinstance(states, np.ndarray):
+            input = torch.Tensor(states)
+        else:
+            input = states
+        action_probs = self.model(input)
+
+        if not return_prob:
+            action_probs = action_probs.detach()
+            action = torch.argmax(action_probs, dim=-1).numpy()
+            return action
+        else:
+            return action_probs
 
     def update(self, states, actions_taken, gamma_t, delta):
         """
@@ -38,9 +55,15 @@ class PiApproximationWithNN(nn.Module):
         gamma_t: gamma^t
         delta: G-v(S_t,w)
         """
-        # TODO: implement this method
+        self.model.train()
+        action_prob = self.forward(states, return_prob=True)
+        # state_inds = torch.arange(states.size(0))
+        # selected_probs = action_prob[0, actions_taken]
+        policy_loss = torch.mean(-torch.log(action_prob) * delta * gamma_t)
+        self.optimizer.zero_grad()
+        policy_loss.backward()
+        self.optimizer.step()
 
-        raise NotImplementedError()
 
 class Baseline(object):
     """
@@ -59,6 +82,7 @@ class Baseline(object):
     def update(self, states, G):
         pass
 
+
 class VApproximationWithNN(nn.Module):
     def __init__(self, state_dims, alpha):
         """
@@ -66,20 +90,45 @@ class VApproximationWithNN(nn.Module):
         alpha: learning rate
         """
         super(VApproximationWithNN, self).__init__()
-        
-        # TODO: implement the rest here
-        
-        raise NotImplementedError()
+        # 2 hidden layers with 32 nodes, ReLU as activations for hidden layers
+        self.model = nn.Sequential(
+            nn.Linear(state_dims, 32),
+            nn.ReLU(),
+            nn.Linear(32, 32),
+            nn.ReLU(),
+            nn.Linear(32, 32),
+            nn.Linear(32, 1)
+        )
+        # self.model.double()
+        self.loss_func = nn.MSELoss()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), betas=(0.9, 0.999), lr=alpha)
 
     def forward(self, states) -> float:
-        # TODO: implement this method
-
-        raise NotImplementedError()
+        self.model.eval()
+        if isinstance(states, np.ndarray):
+            input = torch.Tensor(states)
+        else:
+            input = states
+        pred = self.model(input)
+        return pred.detach()
 
     def update(self, states, G):
-        # TODO: implement this method
-
-        raise NotImplementedError()
+        self.model.train()
+        if isinstance(states, np.ndarray):
+            input = torch.Tensor(states)
+        else:
+            input = states
+        pred = self.model(input)
+        if type(G) is not torch.Tensor:
+            G = torch.Tensor([G])
+            # if type(G) is float:
+            #     G = torch.Tensor([G]) #, dtype=torch.double)
+            # else:
+            #     G = torch.Tensor(G) 
+        loss = self.loss_func(pred, G)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
 
 def REINFORCE(
@@ -87,6 +136,7 @@ def REINFORCE(
     gamma:float,
     num_episodes:int,
     pi:PiApproximationWithNN,
+    # without baseline this is just the Baseline dummy class that returns 0 
     V:VApproximationWithNN) -> Iterable[float]:
     """
     implement REINFORCE algorithm with and without baseline.
@@ -100,6 +150,36 @@ def REINFORCE(
     output:
         a list that includes the G_0 for every episodes.
     """
-    # TODO: implement this method
+    # goal for state 0 for each epiosde (what's returned)
+    G_0 = []
 
-    raise NotImplementedError()
+    for episode in range(num_episodes):
+        # generate all steps for the episode
+        init_state = env.reset()
+        states = [init_state]
+        actions = []
+        rewards = [0]
+        terminal = False
+
+        while not terminal:
+            action = pi(states[-1])
+            state, reward, terminal, _ = env.step(action)
+
+            if not terminal:
+                states.append(state)
+            actions.append(action)
+            rewards.append(reward)
+
+        # train the networks (value and policy) using the episode trajectory
+        steps = len(states)
+        for t in range(steps):
+            G = np.sum([gamma**(k-t-1) * rewards[k] for k in range(t+1, steps+1)])
+            delta = G - V(states[t])
+
+            V.update(states=states[t], G=G)
+            pi.update(states=states[t], actions_taken=actions[t], gamma_t=gamma**t, delta=delta)
+
+            if t == 0:
+                G_0.append(G)
+    
+    return G_0
